@@ -89,7 +89,7 @@ impl Plugin {
                 let mmap = unsafe { Mmap::map(&file)? };
 
                 if &mmap[0..4] != self.header_type() {
-                    Err(Error::ParsingError)
+                    Err(Error::ParsingError("Plugin header not found.".to_owned()))
                 } else {
                     self.parse(&mmap, false)
                 }
@@ -97,7 +97,7 @@ impl Plugin {
                 let mut content = vec![0; 4];
                 reader.read_exact(&mut content)?;
                 if &content[0..4] != self.header_type() {
-                    return Err(Error::ParsingError);
+                    return Err(Error::ParsingError("Plugin header not found.".to_owned()));
                 }
 
                 content.reserve(file_size as usize - 3);

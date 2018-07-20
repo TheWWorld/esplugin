@@ -29,15 +29,15 @@ pub enum Error {
     IoError(io::Error),
     NoFilename,
     ParsingIncomplete,
-    ParsingError,
+    ParsingError(String),
     DecodeError(Cow<'static, str>),
 }
 
-impl<I> From<Err<I>> for Error {
+impl<I: fmt::Debug> From<Err<I>> for Error {
     fn from(error: Err<I>) -> Self {
         match error {
             Err::Incomplete(_) => Error::ParsingIncomplete,
-            _ => Error::ParsingError,
+            Err::Error(c) | Err::Failure(c) => Error::ParsingError(format!("{:02x?}", c)),
         }
     }
 }
@@ -56,11 +56,13 @@ impl From<Cow<'static, str>> for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self {
             Error::IoError(ref x) => x.fmt(f),
             Error::NoFilename => write!(f, "The plugin path has no filename part"),
             Error::ParsingIncomplete => write!(f, "More input was expected by the plugin parser"),
-            Error::ParsingError => write!(f, "An error was encountered while parsing a plugin"),
+            Error::ParsingError(e) => {
+                write!(f, "An error was encountered while parsing a plugin: {}", e)
+            }
             Error::DecodeError(_) => write!(
                 f,
                 "Plugin string content could not be decoded from Windows-1252"
@@ -75,7 +77,7 @@ impl error::Error for Error {
             Error::IoError(ref x) => x.description(),
             Error::NoFilename => "The plugin path has no filename part",
             Error::ParsingIncomplete => "More input was expected by the plugin parser",
-            Error::ParsingError => "An error was encountered while parsing a plugin",
+            Error::ParsingError(_) => "An error was encountered while parsing a plugin",
             Error::DecodeError(_) => "Plugin string content could not be decoded from Windows-1252",
         }
     }
@@ -85,7 +87,7 @@ impl error::Error for Error {
             Error::IoError(ref x) => Some(x),
             Error::NoFilename
             | Error::ParsingIncomplete
-            | Error::ParsingError
+            | Error::ParsingError(_)
             | Error::DecodeError(_) => None,
         }
     }

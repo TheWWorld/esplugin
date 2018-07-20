@@ -62,7 +62,9 @@ impl Record {
         reader.read_exact(&mut content)?;
 
         if &content[0..4] != expected_type {
-            return Err(Error::ParsingError);
+            return Err(Error::ParsingError(
+                "Record is not of expected type.".to_owned(),
+            ));
         }
 
         let size_of_subrecords = LittleEndian::read_u32(&content[4..]) as usize;
